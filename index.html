@@ -80,12 +80,12 @@ body{
   cursor:pointer;
   transition:transform .25s;
   position: relative;
-  margin-top: 50px; /* Memberi ruang di atas agar flap tidak terpotong layar HP */
+  margin-top: 50px;
 }
 .envelope-wrap:active{transform:scale(.95);}
 .envelope-svg{
   width:200px;
-  overflow: visible !important; /* KRUSIAL: Mencegah penutup terpotong di HP */
+  overflow: visible !important;
   filter:drop-shadow(0 12px 28px rgba(0,0,0,.35));
   animation:env-float 3s ease-in-out infinite;
 }
@@ -94,16 +94,14 @@ body{
   50%{transform:translateY(-8px);}
 }
 
-/* Animasi Flap/Penutup Amplop */
 .envelope-flap {
-  transform-origin: 110px 24px; /* Mengunci koordinat engsel aslinya */
+  transform-origin: 110px 24px;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .envelope-wrap.open .envelope-flap {
-  transform: scaleY(-1); /* Membuka penuh ke atas */
+  transform: scaleY(-1);
 }
 
-/* Kertas surat kecil yang muncul */
 .letter-paper {
   position: absolute;
   top: 30px;
@@ -506,8 +504,8 @@ body{
 </head>
 <body>
 
-<audio id="bg-music" loop>
-  <source src="https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3" type="audio/mpeg">
+<audio id="bg-music" loop preload="auto">
+  <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
 </audio>
 
 <div id="confetti"></div>
@@ -534,7 +532,6 @@ body{
 <div class="screen" id="s-game">
 
   <div class="game-header">
-    <p class="game-eyebrow">mini game</p>
     <h2 class="game-title">Hias kuenya dulu~</h2>
     <p class="game-hint">Pilih topping lalu tap kue untuk menaruhnya</p>
   </div>
@@ -590,7 +587,6 @@ body{
     </svg>
 
     <div id="placed-toppings"></div>
-
     <div class="drop-zone" id="drop-zone"></div>
   </div>
 
@@ -613,6 +609,241 @@ body{
 </div>
 
 <script>
+/* ── SOUND EFFECTS via Web Audio API ── */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let actx = null;
+
+function getACtx() {
+  if (!actx) actx = new AudioCtx();
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+// 🎉 Suara buka amplop — "srett!" kertas robek realistis
+function sfxEnvelope() {
+  try {
+    const ctx = getACtx();
+    const sampleRate = ctx.sampleRate;
+
+    // Layer 1: "srett" utama — noise burst pendek dengan envelope tajam
+    function makeSwipe(startTime, duration, freqLow, freqHigh, vol) {
+      const buf = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const t = i / data.length;
+        // noise dengan amplop tajam di awal lalu turun cepat (seperti robek)
+        const env = Math.pow(1 - t, 0.6) * Math.sin(t * Math.PI * 0.9 + 0.1);
+        data[i] = (Math.random() * 2 - 1) * env * vol;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+
+      // Bandpass tinggi = karakter "srett" kertas
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = (freqLow + freqHigh) / 2;
+      bp.Q.value = 0.4;
+
+      // Highpass untuk hilangkan low end yang terlalu bassy
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = freqLow;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(vol, ctx.currentTime + startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+
+      src.connect(bp);
+      bp.connect(hp);
+      hp.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(ctx.currentTime + startTime);
+    }
+
+    // "srett" pertama — awal robek, tajam dan singkat
+    makeSwipe(0,     0.09, 2500, 7000, 2.2);
+    makeSwipe(0.07,  0.13, 3000, 8000, 1.7);
+    makeSwipe(0.18,  0.18, 1500, 5000, 0.9);
+
+    // Layer 2: getaran/crinkle kertas kecil di akhir
+    setTimeout(() => {
+      try {
+        const crinkleBuf = ctx.createBuffer(1, sampleRate * 0.12, sampleRate);
+        const cd = crinkleBuf.getChannelData(0);
+        for (let i = 0; i < cd.length; i++) {
+          const t = i / cd.length;
+          cd[i] = (Math.random() * 2 - 1) * (1 - t) * 0.25;
+        }
+        const cSrc = ctx.createBufferSource();
+        cSrc.buffer = crinkleBuf;
+        const cBp = ctx.createBiquadFilter();
+        cBp.type = 'bandpass';
+        cBp.frequency.value = 4000;
+        cBp.Q.value = 1.2;
+        const cGain = ctx.createGain();
+        cGain.gain.value = 0.5;
+        cSrc.connect(cBp);
+        cBp.connect(cGain);
+        cGain.connect(ctx.destination);
+        cSrc.start();
+      } catch(e){}
+    }, 330);
+
+  } catch(e){}
+}
+
+// 🕯️ Suara tiup lilin — hembusan angin lembut + pip lucu
+function sfxBlow() {
+  try {
+    const ctx = getACtx();
+    const duration = 0.65;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / data.length;
+      data[i] = (Math.random() * 2 - 1) * Math.sin(t * Math.PI) * 0.4;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 700;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.9, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+
+    // "pip!" lucu saat lilin mati
+    setTimeout(() => {
+      try {
+        const ctx2 = getACtx();
+        const osc = ctx2.createOscillator();
+        const g2 = ctx2.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx2.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(280, ctx2.currentTime + 0.22);
+        g2.gain.setValueAtTime(0.3, ctx2.currentTime);
+        g2.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.28);
+        osc.connect(g2);
+        g2.connect(ctx2.destination);
+        osc.start();
+        osc.stop(ctx2.currentTime + 0.28);
+      } catch(e){}
+    }, 320);
+  } catch(e){}
+}
+
+// 🍓 Suara taruh topping — "pop!" kecil imut
+function sfxTopping() {
+  try {
+    const ctx = getACtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    const baseFreq = 600 + Math.random() * 300;
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.4, ctx.currentTime + 0.04);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.28, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+  } catch(e){}
+}
+
+// 🎊 Suara ledakan surprise — party popper lucu!
+function sfxPartyPop() {
+  try {
+    const ctx = getACtx();
+
+    // "BOOM!" utama — noise burst
+    const popBuf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+    const popData = popBuf.getChannelData(0);
+    for (let i = 0; i < popData.length; i++) {
+      popData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / popData.length, 0.25);
+    }
+    const popSrc = ctx.createBufferSource();
+    popSrc.buffer = popBuf;
+    const popFilter = ctx.createBiquadFilter();
+    popFilter.type = 'bandpass';
+    popFilter.frequency.value = 400;
+    popFilter.Q.value = 0.5;
+    const popGain = ctx.createGain();
+    popGain.gain.setValueAtTime(1.4, ctx.currentTime);
+    popGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    popSrc.connect(popFilter);
+    popFilter.connect(popGain);
+    popGain.connect(ctx.destination);
+    popSrc.start();
+
+    // Nada-nada confetti ceria
+    const notes = [523, 659, 784, 1047, 880, 698, 1175];
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        try {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = i % 2 === 0 ? 'triangle' : 'sine';
+          o.frequency.value = freq;
+          g.gain.setValueAtTime(0.2, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+          o.stop(ctx.currentTime + 0.22);
+        } catch(e){}
+      }, i * 75);
+    });
+
+    // Woosh confetti berterbangan
+    setTimeout(() => {
+      try {
+        const wBuf = ctx.createBuffer(1, ctx.sampleRate * 0.55, ctx.sampleRate);
+        const wData = wBuf.getChannelData(0);
+        for (let i = 0; i < wData.length; i++) {
+          wData[i] = (Math.random() * 2 - 1) * (1 - i / wData.length) * 0.18;
+        }
+        const wSrc = ctx.createBufferSource();
+        wSrc.buffer = wBuf;
+        const wFilter = ctx.createBiquadFilter();
+        wFilter.type = 'highpass';
+        wFilter.frequency.value = 2500;
+        const wGain = ctx.createGain();
+        wGain.gain.value = 0.5;
+        wSrc.connect(wFilter);
+        wFilter.connect(wGain);
+        wGain.connect(ctx.destination);
+        wSrc.start();
+      } catch(e){}
+    }, 100);
+
+    // Tawa kecil / sorak "yeay!" simulasi
+    setTimeout(() => {
+      try {
+        [523, 659, 784].forEach((f, i) => {
+          setTimeout(() => {
+            const o2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            o2.type = 'triangle';
+            o2.frequency.value = f;
+            g2.gain.setValueAtTime(0.12, ctx.currentTime);
+            g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            o2.connect(g2);
+            g2.connect(ctx.destination);
+            o2.start();
+            o2.stop(ctx.currentTime + 0.25);
+          }, i * 120);
+        });
+      } catch(e){}
+    }, 500);
+  } catch(e){}
+}
+
 /* ── DATA ── */
 const TOPPINGS = [
   {emoji:'🍓', label:'strawberry', max:3},
@@ -622,7 +853,7 @@ const TOPPINGS = [
   {emoji:'⭐', label:'star',       max:4},
   {emoji:'🍬', label:'candy',      max:3},
 ];
-const NEEDED = 5; 
+const NEEDED = 5;
 
 const BLOW_REACTIONS = [
   "wish granted (semoga) 🌬️",
@@ -632,19 +863,17 @@ const BLOW_REACTIONS = [
   "oke sisa ini doang ditiup ya"
 ];
 
-/* ── FUNGSI INTRO (Optimized for Mobile) ── */
+/* ── FUNGSI INTRO ── */
 function openEnvelope() {
   const env = document.getElementById('envelope-wrap');
   if(env.classList.contains('open')) return;
-  
-  // Audio Playback
-  const audio = document.getElementById('bg-music');
-  audio.volume = 0.5;
-  audio.play().catch(e => console.log("Audio diblokir browser sebelum interaksi"));
+
+  sfxEnvelope();
+
+  const bgMusic = document.getElementById('bg-music');
+  if (bgMusic) { bgMusic.volume = 0.10; bgMusic.play().catch(()=>{}); }
 
   env.classList.add('open');
-
-  // Pindah layar setelah animasi buka surat selesai sempurna
   setTimeout(() => {
     goGame();
   }, 1100);
@@ -700,6 +929,8 @@ function onBlowCandle(e){
   const g = e.currentTarget;
   if(g.classList.contains("blown")) return;
   g.classList.add("blown");
+
+  sfxBlow();
 
   const flamePositions = [{x:136,y:29},{x:164,y:29}];
   const idx = parseInt(g.dataset.flame);
@@ -855,6 +1086,7 @@ function handlePlace(e){
 
   counts[selected]++;
   placed++;
+  sfxTopping();
   showReaction();
 
   if(placed <= NEEDED) document.getElementById(`pill-${placed-1}`)?.classList.add('filled');
@@ -875,6 +1107,7 @@ function handlePlace(e){
 }
 
 function shootConfetti(){
+  sfxPartyPop();
   const wrap = document.getElementById('confetti');
   wrap.innerHTML = '';
   const cols = ['#c9707a','#f5c6a0','#a8d8c8','#f9d29d','#e8e2df','#ebb99a'];
@@ -901,10 +1134,10 @@ function generateDynamicMessage() {
   let favIdx = null;
   let maxCount = 0;
   for (const [idx, count] of Object.entries(counts)) {
-      if(count > maxCount) {
-          maxCount = count;
-          favIdx = idx;
-      }
+    if(count > maxCount) {
+      maxCount = count;
+      favIdx = idx;
+    }
   }
   
   let favToppingName = favIdx !== null ? TOPPINGS[favIdx].label : "spesial";
@@ -924,13 +1157,8 @@ function generateDynamicMessage() {
   msgContainer.classList.remove('show');
   document.getElementById('btn-replay').classList.remove('show');
 
-  setTimeout(() => {
-    msgContainer.classList.add('show');
-  }, 600);
-
-  setTimeout(() => {
-    document.getElementById('btn-replay').classList.add('show');
-  }, 2500);
+  setTimeout(() => { msgContainer.classList.add('show'); }, 600);
+  setTimeout(() => { document.getElementById('btn-replay').classList.add('show'); }, 2500);
 }
 
 function goGame(){
@@ -972,7 +1200,6 @@ function replay(){
   document.getElementById('placed-toppings').innerHTML = '';
   document.getElementById('candle-hint').classList.remove('show');
   document.getElementById('reaction-bubble').classList.remove('show');
-  
   document.getElementById('dynamic-reveal-msg').classList.remove('show');
   document.getElementById('btn-replay').classList.remove('show');
 
