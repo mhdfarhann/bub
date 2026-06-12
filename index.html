@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>For Bubb 🎂</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --ink:#1a1118;
+  --rose:#c9707a;
+  --blush:#f7eded;
+  --stone:#f2eeec;
+  --mist:#e8e2df;
+  --soft:#9b8a8e;
+  --white:#fffcfb;
+  --cake-base:#f5c6a0;
+  --cake-mid:#f0a882;
+  --cake-top:#ebb99a;
+  --frosting:#fff5f0;
+}
+html{height:100%;}
+body{
+  background:var(--stone);
+  font-family:'DM Sans',sans-serif;
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── SCREENS ── */
+.screen{
+  min-height:100vh;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:32px 20px 48px;
+}
+.screen.active{display:flex;}
+
+/* ── SCREEN 1: INTRO ── */
+#s-intro{
+  background:var(--ink);
+  position:relative;
+  overflow:hidden;
+  gap:0;
+}
+#s-intro::before{
+  content:'';
+  position:absolute;
+  width:320px;height:320px;
+  background:radial-gradient(circle,rgba(201,112,122,.18) 0%,transparent 70%);
+  top:-60px;right:-80px;
+  border-radius:50%;
+  pointer-events:none;
+}
+.intro-tag{
+  font-size:.68rem;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--rose);
+  margin-bottom:28px;
+}
+.intro-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3.2rem,13vw,5.5rem);
+  font-weight:400;
+  color:var(--white);
+  line-height:1.05;
+  text-align:center;
+}
+.intro-title em{
+  font-style:italic;
+  color:var(--rose);
+}
+.intro-sub{
+  font-size:.85rem;
+  color:rgba(255,255,255,.35);
+  margin-top:16px;
+  text-align:center;
+  font-weight:300;
+}
+.intro-divider{
+  width:1px;height:48px;
+  background:linear-gradient(to bottom,transparent,var(--rose),transparent);
+  margin:36px 0;
+}
+.btn-main{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--rose);
+  color:var(--white);
+  border:none;
+  border-radius:999px;
+  padding:14px 32px;
+  font-family:'DM Sans',sans-serif;
+  font-size:.88rem;
+  font-weight:500;
+  letter-spacing:.04em;
+  cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 8px 24px rgba(201,112,122,.35);
+  -webkit-appearance:none;
+}
+.btn-main:active{transform:scale(.96);}
+
+.envelope-wrap{
+  cursor:pointer;
+  transition:transform .25s;
+}
+.envelope-wrap:active{transform:scale(.95);}
+.envelope-svg{
+  width:200px;
+  filter:drop-shadow(0 12px 28px rgba(0,0,0,.25));
+  animation:env-float 3s ease-in-out infinite;
+}
+@keyframes env-float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+
+.dot-bg{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.dot{
+  position:absolute;border-radius:50%;
+  background:rgba(201,112,122,.07);
+  animation:drift linear infinite;
+}
+@keyframes drift{
+  0%{transform:translateY(110vh) scale(.8);}
+  100%{transform:translateY(-20vh) scale(1.1);}
+}
+
+/* ── SCREEN 2: GAME ── */
+#s-game{
+  background:var(--stone);
+  gap:0;
+  justify-content:flex-start;
+  padding-top:28px;
+}
+.game-header{
+  text-align:center;
+  margin-bottom:20px;
+}
+.game-eyebrow{
+  font-size:.65rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--soft);
+  margin-bottom:6px;
+}
+.game-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.9rem;
+  font-weight:600;
+  color:var(--ink);
+}
+.game-hint{
+  font-size:.78rem;
+  color:var(--soft);
+  margin-top:6px;
+  font-weight:300;
+  transition: color 0.3s;
+}
+.reaction-bubble{
+  min-height:28px;
+  text-align:center;
+  font-size:.82rem;
+  color:var(--rose);
+  font-weight:500;
+  margin-bottom:10px;
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity .3s,transform .3s;
+}
+.reaction-bubble.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* progress pills */
+.progress-row{
+  display:flex;gap:6px;
+  margin-bottom:20px;
+}
+.pill{
+  height:4px;
+  flex:1;
+  border-radius:99px;
+  background:var(--mist);
+  transition:background .4s;
+}
+.pill.filled{background:var(--rose);}
+
+/* cake stage */
+.cake-stage{
+  position:relative;
+  width:min(300px, 82vw);
+  margin:0 auto 20px;
+  user-select:none;
+}
+/* SVG cake */
+.cake-svg{
+  width:100%;
+  filter:drop-shadow(0 12px 28px rgba(0,0,0,.1));
+}
+/* topping drop zone overlay */
+.drop-zone{
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+}
+/* placed toppings */
+#placed-toppings{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.placed{
+  position:absolute;
+  font-size:1.6rem;
+  transform:translate(-50%,-50%);
+  animation:pop-in .25s cubic-bezier(.34,1.56,.64,1) both;
+  pointer-events:none;
+}
+@keyframes pop-in{
+  from{transform:translate(-50%,-50%) scale(0) rotate(-30deg);}
+  60%{transform:translate(-50%,-50%) scale(1.25) rotate(8deg);}
+  to{transform:translate(-50%,-50%) scale(1) rotate(0deg);}
+}
+
+/* candle flames */
+.flame-group{
+  cursor:pointer;
+  transform-origin:center bottom;
+  animation:flicker 1.4s ease-in-out infinite;
+}
+.flame-group:nth-child(2){animation-delay:.2s;}
+@keyframes flicker{
+  0%,100%{transform:scale(1) rotate(0deg);}
+  25%{transform:scale(1.05,.95) rotate(-3deg);}
+  50%{transform:scale(.95,1.05) rotate(2deg);}
+  75%{transform:scale(1.03,.97) rotate(-1deg);}
+}
+.flame-outer,.flame-inner{
+  transition:opacity .25s;
+}
+.flame-group.blown .flame-outer,
+.flame-group.blown .flame-inner{
+  opacity:0;
+}
+.flame-group.blown{
+  animation:none;
+}
+.smoke{
+  transition:none;
+}
+.flame-group.blown .smoke{
+  animation:smoke-rise 1.2s ease-out forwards;
+}
+@keyframes smoke-rise{
+  0%{opacity:.8; transform:translateY(0) scale(1);}
+  50%{opacity:.5; transform:translateY(-15px) scale(2.6);}
+  100%{opacity:0; transform:translateY(-35px) scale(3.5);}
+}
+.flame-group.blown{
+  animation:candle-wobble .4s ease-out;
+}
+@keyframes candle-wobble{
+  0%,100%{transform:rotate(0deg);}
+  30%{transform:rotate(-8deg);}
+  60%{transform:rotate(6deg);}
+}
+.candle-fx{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  font-size:1.3rem;
+  pointer-events:none;
+  animation:fx-pop .9s ease-out forwards;
+}
+@keyframes fx-pop{
+  0%{opacity:0; transform:translate(-50%,-50%) scale(.3);}
+  30%{opacity:1; transform:translate(-50%,-50%) scale(1.3);}
+  100%{opacity:0; transform:translate(-50%,-120%) scale(1);}
+}
+
+/* topping shelf wrap */
+#shelf-wrap{
+  transition: opacity 0.4s ease;
+  width: 100%;
+}
+.shelf-label{
+  font-size:.65rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--soft);
+  text-align:center;
+  margin-bottom:10px;
+}
+.shelf{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:20px;
+}
+.topping-btn{
+  width:54px;height:54px;
+  border-radius:14px;
+  background:var(--white);
+  border:1.5px solid var(--mist);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;
+  cursor:pointer;
+  transition:transform .15s,border-color .15s,box-shadow .15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  -webkit-appearance:none;
+  position:relative;
+}
+.topping-btn.selected{
+  border-color:var(--rose);
+  box-shadow:0 0 0 3px rgba(201,112,122,.2);
+  transform:scale(1.08);
+}
+.topping-btn.used{
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* blow hint */
+.blow-hint{
+  display:none;
+  width:100%;
+  text-align:center;
+  font-family:'DM Sans',sans-serif;
+  font-size:1.1rem;
+  font-weight:600;
+  color:var(--rose);
+  margin-top:10px;
+  animation:pulse 1s infinite alternate;
+}
+.blow-hint.visible{display:block;}
+@keyframes pulse{
+  from{opacity:0.6; transform:scale(0.98);}
+  to{opacity:1; transform:scale(1.02);}
+}
+
+/* ── SCREEN 3: REVEAL ── */
+#s-reveal{
+  background:var(--ink);
+  gap:0;
+  overflow:hidden;
+  position:relative;
+}
+#s-reveal::after{
+  content:'';
+  position:absolute;
+  width:260px;height:260px;
+  background:radial-gradient(circle,rgba(201,112,122,.15) 0%,transparent 70%);
+  bottom:-40px;left:-60px;
+  border-radius:50%;
+  pointer-events:none;
+}
+.reveal-cake{
+  font-size:5.5rem;
+  margin-bottom:24px;
+  animation:wiggle 1.2s ease-in-out infinite;
+}
+@keyframes wiggle{
+  0%,100%{transform:rotate(-4deg);}
+  50%{transform:rotate(4deg);}
+}
+.reveal-eyebrow{
+  font-size:.68rem;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--rose);
+  margin-bottom:16px;
+}
+.reveal-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3rem,12vw,5rem);
+  font-weight:400;
+  color:var(--white);
+  line-height:1;
+  text-align:center;
+  margin-bottom:8px;
+}
+.reveal-name em{font-style:italic;}
+.reveal-divider{
+  width:40px;height:1.5px;
+  background:var(--rose);
+  margin:20px auto;
+}
+.reveal-msg{
+  font-size:.92rem;
+  line-height:1.85;
+  color:rgba(255,255,255,.65);
+  text-align:center;
+  max-width:300px;
+  font-weight:300;
+}
+.reveal-msg strong{
+  color:var(--white);
+  font-weight:500;
+}
+.btn-replay{
+  margin-top:28px;
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;
+  color:var(--rose);
+  border:1.5px solid rgba(201,112,122,.4);
+  border-radius:999px;
+  padding:12px 28px;
+  font-family:'DM Sans',sans-serif;
+  font-size:.82rem;
+  font-weight:500;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:border-color .2s,transform .2s;
+  -webkit-appearance:none;
+}
+.btn-replay:active{transform:scale(.96);}
+
+/* ── CONFETTI ── */
+#confetti{
+  position:fixed;inset:0;pointer-events:none;z-index:999;
+}
+.cf{
+  position:absolute;
+  width:7px;height:10px;
+  border-radius:2px;
+  top:-12px;
+  animation:cf-fall linear forwards;
+}
+@keyframes cf-fall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1;}
+  100%{transform:translateY(105vh) rotate(600deg);opacity:0;}
+}
+
+/* ── TRANSITIONS ── */
+.screen{opacity:0;transition:opacity .5s ease;}
+.screen.active{opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<div class="screen active" id="s-intro">
+  <div class="dot-bg" id="dot-bg"></div>
+
+  <p class="intro-tag">tap untuk membuka</p>
+
+  <div class="envelope-wrap" onclick="goGame()">
+    <svg class="envelope-svg" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="20" width="208" height="130" rx="6" fill="#fdf6f2" stroke="#c9707a" stroke-width="1.5"/>
+      <path d="M10,24 L110,100 L210,24" fill="none" stroke="#c9707a" stroke-width="1.5"/>
+      <path d="M10,146 L80,80" fill="none" stroke="rgba(201,112,122,.35)" stroke-width="1.5"/>
+      <path d="M210,146 L140,80" fill="none" stroke="rgba(201,112,122,.35)" stroke-width="1.5"/>
+      <circle cx="110" cy="58" r="9" fill="#c9707a"/>
+    </svg>
+  </div>
+
+  <div class="intro-divider"></div>
+</div>
+
+<div class="screen" id="s-game">
+
+  <div class="game-header">
+    <p class="game-eyebrow">mini game</p>
+    <h2 class="game-title">Hias kuenya dulu~</h2>
+    <p class="game-hint" id="game-hint">Pilih topping lalu tap kue untuk menaruhnya</p>
+  </div>
+
+  <div class="progress-row" id="progress-row"></div>
+
+  <div class="reaction-bubble" id="reaction-bubble"></div>
+
+  <div class="cake-stage" id="cake-stage">
+    <svg class="cake-svg" viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="150" cy="245" rx="115" ry="10" fill="rgba(0,0,0,.07)"/>
+      <rect x="30" y="175" width="240" height="65" rx="12" fill="#f5c6a0"/>
+      <rect x="30" y="175" width="240" height="16" rx="6" fill="#fff5f0"/>
+      <path d="M30,191 Q55,180 80,191 Q105,202 130,191 Q155,180 180,191 Q205,202 230,191 Q255,180 270,191 L270,175 L30,175 Z" fill="white" opacity=".6"/>
+      <rect x="55" y="115" width="190" height="65" rx="10" fill="#f0a882"/>
+      <rect x="55" y="115" width="190" height="14" rx="5" fill="#fff5f0"/>
+      <path d="M55,129 Q78,119 101,129 Q124,139 147,129 Q170,119 193,129 Q216,139 245,129 L245,115 L55,115 Z" fill="white" opacity=".6"/>
+      <rect x="85" y="65" width="130" height="55" rx="10" fill="#ebb99a"/>
+      <rect x="85" y="65" width="130" height="12" rx="5" fill="#fff5f0"/>
+      <path d="M85,77 Q103,68 121,77 Q139,86 157,77 Q175,68 193,77 Q211,86 215,77 L215,65 L85,65 Z" fill="white" opacity=".6"/>
+      
+      <path d="M 115 45 C 115 32 132 32 132 45 C 132 54 115 62 115 65 L 134 65" fill="none" stroke="#f4a5b0" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 155 65 L 155 38 L 140 55 L 162 55" fill="none" stroke="#a8d8c8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <g class="flame-group" data-flame="0">
+        <ellipse class="flame-outer" cx="123.5" cy="28" rx="4" ry="6" fill="#FFD166" opacity=".9"/>
+        <ellipse class="flame-inner" cx="123.5" cy="27" rx="2" ry="3" fill="#FF9F1C"/>
+        <ellipse class="smoke" cx="123.5" cy="28" rx="2" ry="3" fill="#bbb" opacity="0"/>
+      </g>
+      <g class="flame-group" data-flame="1">
+        <ellipse class="flame-outer" cx="155" cy="33" rx="4" ry="6" fill="#FFD166" opacity=".9"/>
+        <ellipse class="flame-inner" cx="155" cy="32" rx="2" ry="3" fill="#FF9F1C"/>
+        <ellipse class="smoke" cx="155" cy="33" rx="2" ry="3" fill="#bbb" opacity="0"/>
+      </g>
+
+      <line x1="70" y1="120" x2="70" y2="178" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      <line x1="100" y1="120" x2="100" y2="178" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      <line x1="200" y1="120" x2="200" y2="178" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      <line x1="230" y1="120" x2="230" y2="178" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+    </svg>
+
+    <div id="placed-toppings"></div>
+
+    <div class="drop-zone" id="drop-zone"></div>
+  </div>
+
+  <div id="shelf-wrap">
+    <p class="shelf-label">pilih topping</p>
+    <div class="shelf" id="shelf"></div>
+  </div>
+
+  <div id="blow-hint" class="blow-hint">Sekarang tap lilinnya untuk tiup! 🌬️</div>
+
+</div>
+
+<div class="screen" id="s-reveal">
+  <div class="reveal-cake" id="reveal-cake">🎂</div>
+  <p class="reveal-eyebrow">happy birthday</p>
+  <h2 class="reveal-name"><em>Bubb</em></h2>
+  <div class="reveal-divider"></div>
+  <p class="reveal-msg">
+    Selamat ulang tahun, <strong>Bubb!</strong><br><br>
+    Semoga tahun ini penuh hal-hal yang bikin kamu senyum
+    tanpa alasan jelas — yang tiba-tiba, yang hangat,
+    yang kamu sendiri gak nyangka.<br><br>
+    Bubb udah cukup, dan Bubb juga berhak bahagia. 🎂
+  </p>
+  <button class="btn-replay" onclick="replay()">↩ Ulangi game</button>
+</div>
+
+<script>
+/* ── DATA ── */
+const TOPPINGS = [
+  {emoji:'🍓', label:'strawberry', max:3},
+  {emoji:'🫐', label:'blueberry',  max:3},
+  {emoji:'🍫', label:'choco',      max:2},
+  {emoji:'🌸', label:'sakura',     max:3},
+  {emoji:'⭐', label:'star',       max:4},
+  {emoji:'🍬', label:'candy',      max:3},
+];
+const NEEDED = 5; 
+
+const BLOW_REACTIONS = [
+  "wish granted (semoga) 🌬️",
+  "make a wish dulu ya~",
+  "fiuhhhh 💨",
+];
+
+window.canBlow = false;
+
+function setupCandles(){
+  document.querySelectorAll(".flame-group").forEach(g=>{
+    g.classList.remove("blown");
+    g.addEventListener("click", onBlowCandle);
+  });
+}
+
+function onBlowCandle(e){
+  const g = e.currentTarget;
+  
+  if(!window.canBlow) {
+    const el = document.getElementById('reaction-bubble');
+    el.textContent = "Hias kuenya sampai selesai dulu dong! 🎂";
+    el.classList.remove('show');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+    return;
+  }
+
+  if(g.classList.contains("blown")) return;
+  g.classList.add("blown");
+
+  const el = document.getElementById("reaction-bubble");
+  const msg = BLOW_REACTIONS[Math.floor(Math.random()*BLOW_REACTIONS.length)];
+  el.textContent = msg;
+  el.classList.remove("show");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("show")));
+  clearTimeout(window._reactTimeout);
+  window._reactTimeout = setTimeout(()=>el.classList.remove("show"), 1600);
+
+  const stage = document.getElementById("cake-stage");
+  const fx = document.createElement("div");
+  fx.className = "candle-fx";
+  fx.textContent = "✨";
+  const idx = parseInt(g.dataset.flame);
+  const leftPct = [41.1, 51.6][idx];
+  fx.style.left = leftPct + "%";
+  fx.style.top  = "10%";
+  stage.appendChild(fx);
+  setTimeout(()=>fx.remove(), 900);
+
+  const allBlown = [...document.querySelectorAll(".flame-group")].every(f=>f.classList.contains("blown"));
+  if(allBlown) {
+      document.getElementById('blow-hint').classList.remove('visible');
+      document.getElementById('game-hint').innerText = "Yeayyy! 🎉";
+      setTimeout(()=> {
+          goReveal();
+      }, 1500);
+  }
+}
+
+const REACTIONS = [
+  'wah cantik! 😍',
+  'iya gitu dong~',
+  'kuenya makin lapar dipandang 👀',
+  'satu lagi, satu lagi!',
+  'tangan emas terdeteksi ✨',
+  'enak ini kalau beneran',
+  'koki bersertifikat lewat',
+  'hmm... selera tinggi',
+  'cantik bgt kayak yang hias',
+  'oke ini udah masuk galeri',
+];
+
+function showReaction(){
+  const el = document.getElementById('reaction-bubble');
+  const msg = REACTIONS[Math.floor(Math.random()*REACTIONS.length)];
+  el.textContent = msg;
+  el.classList.remove('show');
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>el.classList.add('show'));
+  });
+  clearTimeout(window._reactTimeout);
+  window._reactTimeout = setTimeout(()=>el.classList.remove('show'), 1600);
+}
+
+let selected = null;
+let placed   = 0;
+let counts   = {};
+
+/* ── INIT DOTS BG ── */
+(function(){
+  const bg = document.getElementById('dot-bg');
+  for(let i=0;i<18;i++){
+    const d = document.createElement('div');
+    d.className = 'dot';
+    const s = 30+Math.random()*80;
+    d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;
+      animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*8}s;`;
+    bg.appendChild(d);
+  }
+})();
+
+/* ── BUILD SHELF ── */
+function buildShelf(){
+  const shelf = document.getElementById('shelf');
+  shelf.innerHTML = '';
+  counts = {};
+  TOPPINGS.forEach((t,i)=>{
+    counts[i] = 0;
+    const btn = document.createElement('button');
+    btn.className = 'topping-btn';
+    btn.dataset.idx = i;
+    btn.innerHTML = t.emoji;
+    btn.addEventListener('click', ()=>selectTopping(i));
+    shelf.appendChild(btn);
+  });
+}
+
+/* ── BUILD PROGRESS ── */
+function buildProgress(){
+  const row = document.getElementById('progress-row');
+  row.innerHTML = '';
+  for(let i=0;i<NEEDED;i++){
+    const p = document.createElement('div');
+    p.className = 'pill';
+    p.id = `pill-${i}`;
+    row.appendChild(p);
+  }
+}
+
+/* ── SELECT TOPPING ── */
+function selectTopping(idx){
+  document.querySelectorAll('.topping-btn').forEach(b=>b.classList.remove('selected'));
+  selected = idx;
+  document.querySelectorAll('.topping-btn')[idx].classList.add('selected');
+}
+
+/* ── PLACE ON CAKE ── */
+function setupDropZone(){
+  const zone = document.getElementById('drop-zone');
+  zone.addEventListener('click', handlePlace);
+  zone.addEventListener('touchend', e=>{
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const rect = zone.getBoundingClientRect();
+    handlePlace({offsetX: t.clientX-rect.left, offsetY: t.clientY-rect.top});
+  }, {passive:false});
+}
+
+function handlePlace(e){
+  const stage0 = document.getElementById('cake-stage');
+  const rect0  = stage0.getBoundingClientRect();
+  const svgX = (e.offsetX / rect0.width) * 300;
+  const svgY = (e.offsetY / rect0.height) * 260;
+  
+  const flamePositions = [{x:123.5,y:28},{x:155,y:33}];
+  for(let i=0;i<flamePositions.length;i++){
+    const fp = flamePositions[i];
+    if(Math.hypot(svgX-fp.x, svgY-fp.y) < 18){
+      const g = document.querySelectorAll('.flame-group')[i];
+      if(g && !g.classList.contains('blown')) onBlowCandle({currentTarget:g});
+      return;
+    }
+  }
+
+  if(selected === null) return;
+  const t = TOPPINGS[selected];
+  if(counts[selected] >= t.max) return;
+
+  const stage = document.getElementById('cake-stage');
+  const rect  = stage.getBoundingClientRect();
+  const x = (e.offsetX / rect.width  * 100).toFixed(1);
+  const y = (e.offsetY / rect.height * 100).toFixed(1);
+
+  if(parseFloat(y) < 15 || parseFloat(y) > 95) return;
+
+  const el = document.createElement('div');
+  el.className = 'placed';
+  el.textContent = t.emoji;
+  el.style.left = x+'%';
+  el.style.top  = y+'%';
+  document.getElementById('placed-toppings').appendChild(el);
+
+  counts[selected]++;
+  placed++;
+  showReaction();
+
+  if(placed <= NEEDED) document.getElementById(`pill-${placed-1}`)?.classList.add('filled');
+
+  if(counts[selected] >= t.max){
+    document.querySelectorAll('.topping-btn')[selected].classList.add('used');
+    selected = null;
+    document.querySelectorAll('.topping-btn').forEach(b=>b.classList.remove('selected'));
+  }
+
+  // trigger when enough toppings are placed
+  if(placed === NEEDED){
+    window.canBlow = true;
+    document.getElementById('blow-hint').classList.add('visible');
+    
+    // Hide shelf gracefully
+    const shelfWrap = document.getElementById('shelf-wrap');
+    shelfWrap.style.opacity = '0';
+    shelfWrap.style.pointerEvents = 'none';
+    
+    // Change top hint
+    const gameHint = document.getElementById('game-hint');
+    gameHint.style.color = 'var(--rose)';
+    gameHint.style.fontWeight = '500';
+    gameHint.innerText = "Kuenya udah siap! ✨";
+    
+    // Auto deselect
+    selected = null;
+    document.querySelectorAll('.topping-btn').forEach(b=>b.classList.remove('selected'));
+  }
+}
+
+/* ── CONFETTI ── */
+function shootConfetti(){
+  const wrap = document.getElementById('confetti');
+  wrap.innerHTML = '';
+  const cols = ['#c9707a','#f5c6a0','#a8d8c8','#f9d29d','#e8e2df','#ebb99a'];
+  for(let i=0;i<50;i++){
+    const c = document.createElement('div');
+    c.className = 'cf';
+    c.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${cols[i%cols.length]};
+      animation-duration:${1.6+Math.random()*.8}s;
+      animation-delay:${Math.random()*1.2}s;
+      transform:rotate(${Math.random()*360}deg);
+    `;
+    wrap.appendChild(c);
+    setTimeout(()=>c.remove(), 3500);
+  }
+}
+
+function buildRevealCake(){
+  document.getElementById('reveal-cake').textContent = '🎂';
+}
+
+/* ── NAVIGATION ── */
+function goGame(){
+  switchScreen('s-intro','s-game');
+  buildShelf();
+  buildProgress();
+  setupDropZone();
+  setupCandles();
+  
+  // reset state
+  placed = 0;
+  selected = null;
+  window.canBlow = false;
+  
+  const shelfWrap = document.getElementById('shelf-wrap');
+  shelfWrap.style.opacity = '1';
+  shelfWrap.style.pointerEvents = 'auto';
+  
+  const gameHint = document.getElementById('game-hint');
+  gameHint.style.color = 'var(--soft)';
+  gameHint.style.fontWeight = '300';
+  gameHint.innerText = "Pilih topping lalu tap kue untuk menaruhnya";
+  
+  document.getElementById('blow-hint').classList.remove('visible');
+  document.getElementById('placed-toppings').innerHTML = '';
+  document.getElementById('reaction-bubble').classList.remove('show');
+}
+
+function goReveal(){
+  buildRevealCake();
+  switchScreen('s-game','s-reveal');
+  setTimeout(shootConfetti, 400);
+}
+
+function replay(){
+  goGame(); // reuse the reset logic in goGame
+}
+
+function switchScreen(fromId, toId){
+  const from = document.getElementById(fromId);
+  const to   = document.getElementById(toId);
+  from.classList.remove('active');
+  setTimeout(()=>{
+    to.classList.add('active');
+    window.scrollTo(0,0);
+  }, 300);
+}
+</script>
+</body>
+</html>
