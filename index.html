@@ -57,11 +57,13 @@ body{
   pointer-events:none;
 }
 .intro-tag{
-  font-size:.68rem;
-  letter-spacing:.15em;
+  font-size:.75rem;
+  letter-spacing:.12em;
   text-transform:uppercase;
   color:var(--rose);
-  margin-bottom:28px;
+  margin-bottom:40px;
+  text-align:center;
+  padding:0 15px;
   animation: pulse-text 2s infinite ease-in-out;
 }
 @keyframes pulse-text {
@@ -71,32 +73,36 @@ body{
 .intro-divider{
   width:1px;height:48px;
   background:linear-gradient(to bottom,transparent,var(--rose),transparent);
-  margin:36px 0;
+  margin:40px 0 0 0;
 }
 
 .envelope-wrap{
   cursor:pointer;
   transition:transform .25s;
   position: relative;
+  margin-top: 50px; /* Memberi ruang di atas agar flap tidak terpotong layar HP */
 }
 .envelope-wrap:active{transform:scale(.95);}
 .envelope-svg{
   width:200px;
-  filter:drop-shadow(0 12px 28px rgba(0,0,0,.25));
+  overflow: visible !important; /* KRUSIAL: Mencegah penutup terpotong di HP */
+  filter:drop-shadow(0 12px 28px rgba(0,0,0,.35));
   animation:env-float 3s ease-in-out infinite;
 }
 @keyframes env-float{
   0%,100%{transform:translateY(0);}
   50%{transform:translateY(-8px);}
 }
-/* Animasi Flap Amplop */
+
+/* Animasi Flap/Penutup Amplop */
 .envelope-flap {
-  transform-origin: center 24px;
+  transform-origin: 110px 24px; /* Mengunci koordinat engsel aslinya */
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .envelope-wrap.open .envelope-flap {
-  transform: scaleY(-1);
+  transform: scaleY(-1); /* Membuka penuh ke atas */
 }
+
 /* Kertas surat kecil yang muncul */
 .letter-paper {
   position: absolute;
@@ -110,11 +116,12 @@ body{
   z-index: -1;
   opacity: 0;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.15);
 }
 .envelope-wrap.open .letter-paper {
-  top: -40px;
+  top: -45px;
   opacity: 1;
+  transform: translateX(-50%) scale(0.95);
 }
 
 .dot-bg{
@@ -426,7 +433,6 @@ body{
   margin:20px auto;
 }
 
-/* Styling untuk pesan reveal (fade in effect) */
 .reveal-msg{
   font-size:.92rem;
   line-height:1.85;
@@ -434,7 +440,7 @@ body{
   text-align:center;
   max-width:300px;
   font-weight:300;
-  opacity: 0; /* Mulai dari transparan */
+  opacity: 0;
   transform: translateY(15px);
   transition: opacity 1.8s ease, transform 1.8s ease;
 }
@@ -528,6 +534,7 @@ body{
 <div class="screen" id="s-game">
 
   <div class="game-header">
+    <p class="game-eyebrow">mini game</p>
     <h2 class="game-title">Hias kuenya dulu~</h2>
     <p class="game-hint">Pilih topping lalu tap kue untuk menaruhnya</p>
   </div>
@@ -600,8 +607,7 @@ body{
   <h2 class="reveal-name"><em>Bubb</em></h2>
   <div class="reveal-divider"></div>
   
-  <p class="reveal-msg" id="dynamic-reveal-msg">
-    </p>
+  <p class="reveal-msg" id="dynamic-reveal-msg"></p>
 
   <button class="btn-replay" id="btn-replay" onclick="replay()">↩ Ulangi game</button>
 </div>
@@ -619,30 +625,29 @@ const TOPPINGS = [
 const NEEDED = 5; 
 
 const BLOW_REACTIONS = [
-  "wish granted (semoga) \xf0\x9f\x8c\xac\xef\xb8\x8f",
+  "wish granted (semoga) 🌬️",
   "satu lilin, satu harapan~",
   "asapnya jangan kena mata",
   "cieee niup lilin mulu",
   "oke sisa ini doang ditiup ya"
 ];
 
-/* ── FUNGSI INTRO (Baru) ── */
+/* ── FUNGSI INTRO (Optimized for Mobile) ── */
 function openEnvelope() {
   const env = document.getElementById('envelope-wrap');
-  if(env.classList.contains('open')) return; // Mencegah klik dua kali
+  if(env.classList.contains('open')) return;
   
-  // Putar lagu Lo-fi
+  // Audio Playback
   const audio = document.getElementById('bg-music');
-  audio.volume = 0.6; // Set volume sedikit lebih pelan
-  audio.play().catch(e => console.log("Auto-play audio dicegah oleh browser"));
+  audio.volume = 0.5;
+  audio.play().catch(e => console.log("Audio diblokir browser sebelum interaksi"));
 
-  // Buka amplop
   env.classList.add('open');
 
-  // Pindah ke game setelah animasi amplop selesai (0.9 detik)
+  // Pindah layar setelah animasi buka surat selesai sempurna
   setTimeout(() => {
     goGame();
-  }, 900);
+  }, 1100);
 }
 
 function setupCandles(){
@@ -889,13 +894,10 @@ function shootConfetti(){
 }
 
 function buildRevealCake(){
-  const placed = document.getElementById('placed-toppings').children;
-  const emojis = [...placed].map(el=>el.textContent).join(' ');
   document.getElementById('reveal-cake').textContent = '🎂';
 }
 
 function generateDynamicMessage() {
-  // Cari topping yang paling banyak dipakai
   let favIdx = null;
   let maxCount = 0;
   for (const [idx, count] of Object.entries(counts)) {
@@ -905,32 +907,27 @@ function generateDynamicMessage() {
       }
   }
   
-  // Jika karena suatu hal tidak ada (fallback), pakai kata "spesial"
   let favToppingName = favIdx !== null ? TOPPINGS[favIdx].label : "spesial";
   let favToppingEmoji = favIdx !== null ? TOPPINGS[favIdx].emoji : "✨";
 
   const msgContainer = document.getElementById('dynamic-reveal-msg');
   
-  // String template literal untuk pesan
   msgContainer.innerHTML = `
     Selamat ulang tahun, <strong>Bubb!</strong><br><br>
     Semoga tahun ini penuh hal-hal yang bikin kamu senyum
     tanpa alasan jelas — yang tiba-tiba, yang hangat,
     yang kamu sendiri gak nyangka.<br><br>
-    Semoga hari-harimu ke depan bisa semanis kue <span class="highlight">${favToppingName} ${favToppingEmoji}</span> buatanmu barusan ya.<br><br>
+    Semoga hari-harinya ke depan bisa semanis kue <span class="highlight">${favToppingName} ${favToppingEmoji}</span> buatannya barusan ya.<br><br>
     Bubb udah cukup, dan Bubb juga berhak bahagia.
   `;
 
-  // Hilangkan class show dulu (jika replay)
   msgContainer.classList.remove('show');
   document.getElementById('btn-replay').classList.remove('show');
 
-  // Trigger animasi fade-in elegan setelah sedikit delay
   setTimeout(() => {
     msgContainer.classList.add('show');
-  }, 600); // 0.6s setelah layar reveal aktif
+  }, 600);
 
-  // Munculkan tombol replay belakangan
   setTimeout(() => {
     document.getElementById('btn-replay').classList.add('show');
   }, 2500);
@@ -959,8 +956,6 @@ function goReveal(){
   buildRevealCake();
   switchScreen('s-game','s-reveal');
   setTimeout(shootConfetti, 400);
-  
-  // Panggil fungsi pembuat pesan dinamis
   generateDynamicMessage();
 }
 
@@ -978,7 +973,6 @@ function replay(){
   document.getElementById('candle-hint').classList.remove('show');
   document.getElementById('reaction-bubble').classList.remove('show');
   
-  // Sembunyikan text di layar reveal agar saat balik nanti animasi main lagi
   document.getElementById('dynamic-reveal-msg').classList.remove('show');
   document.getElementById('btn-replay').classList.remove('show');
 
